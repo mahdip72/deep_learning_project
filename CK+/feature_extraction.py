@@ -3,7 +3,7 @@ import cv2
 import os
 import tensorflow.keras as k
 import efficientnet.tfkeras as e
-from lib import prepare_image
+from utils import prepare_image
 
 
 model_dir = '../demo/model/AffectNet/checkpoint.h5'

@@ -10,7 +10,7 @@ import cv2
 from skimage.util import random_noise
 from sklearn.model_selection import KFold
 from tensorflow import keras as k
-from lib import f1_macro, f1_macro_loss
+from utils import f1_macro, f1_macro_loss
 
 
 def calculate_class_weights(data):

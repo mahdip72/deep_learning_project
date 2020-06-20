@@ -4,11 +4,11 @@ import numpy as np
 import os
 import json
 import tensorflow.keras as k
-from lib import FaceDetector
-from lib import prepare_image
+from utils import FaceDetector
+from utils import prepare_image
 import efficientnet.tfkeras as e
 from tensorflow.keras import backend as K
-from lib import r2
+from utils import r2
 
 
 def root_mean_squared_error(y_true, y_pred):

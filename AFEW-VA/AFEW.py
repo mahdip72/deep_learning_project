@@ -3,10 +3,10 @@ import numpy as np
 import os
 import json
 import tensorflow.keras as k
-from lib import FaceDetector
+from utils import FaceDetector
 from keras import backend as K
-from lib import prepare_image
-from lib import r2
+from utils import prepare_image
+from utils import r2
 
 np.random.seed(10)
 # MODEL_PATH = '../demo/model/Face_Detection/model.pb'

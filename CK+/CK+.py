@@ -3,7 +3,7 @@ import numpy as np
 import os
 import random
 from sklearn.model_selection import KFold
-from lib import attention_3d_block
+from utils import attention_3d_block
 
 
 class Generator:
