@@ -6,7 +6,7 @@ import pandas as pd
 import scipy.io
 import cv2
 import pickle
-from keras.utils.np_utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 
 
 def _bytes_feature(value):
@@ -51,14 +51,20 @@ def get_images_dirs(sub_dirs):
         label_list = []
         keys = list(label.keys())
         images_list = os.listdir(folder)
-        images_list.remove('TimeStamp.txt')
+        try:
+            images_list.remove('TimeStamp.txt')
+        except ValueError:
+            pass
         for image_indx in range(len(images_list)):
             au = dict()
             for key in keys:
                 # sparse categorical:
                 # au[key] = np.array([label[key][image_indx]])
                 # categorical:
-                au[key] = np.squeeze(to_categorical([label[key][image_indx]], num_classes=6))
+                try:
+                    au[key] = np.squeeze(to_categorical([label[key][image_indx]], num_classes=6))
+                except IndexError:
+                    print('error')
             label_list.append(au)
         for indx, image in enumerate(images_list):
             images_dir += [[os.path.join(folder, image), label_list[indx]]]
@@ -87,14 +93,6 @@ def calculate_class_unbalancing(data):
     for image_dir, label in data:
         for key in keys:
             vars()[key] += label[key]
-
-    # for key in keys:
-    #     maximum = np.max(vars()[key])
-    #     for i, j in enumerate(vars()[key]):
-    #         if j != 0:
-    #             vars()[key][i] = maximum / j
-    #         else:
-    #             vars()[key][i] = 1
 
     for key in keys:
         au = {}
@@ -137,14 +135,11 @@ class DataPreprocess:
                 return row[0][0][1]
 
 
-def image_reshape(img, label):
+def image_reshape(file_path, label):
+    img = tf.py_function(func=load_cropped_image, inp=[file_path], Tout=[tf.float32])
     img = tf.reshape(img, [224, 224, 3])
     return img, label
 
-
-model_name = 'efficientb0_ccc_loss_extra_layer_2'
-save_path = os.path.abspath('D:\mehdi\models\AffectNet')
-model_path = os.path.join(save_path, f"{model_name}")
 
 # if not os.path.exists(model_path):
 #     os.makedirs(model_path)
@@ -152,9 +147,10 @@ model_path = os.path.join(save_path, f"{model_name}")
 auto = tf.data.experimental.AUTOTUNE
 batch = 32
 
-data_path = os.path.abspath('E:\Document\Database\FER\DISFA+\Images')
-landmark_path = os.path.abspath('E:\Document\Database\FER\DISFA+\FaceLandmarks\landmarks')
-label_path = os.path.abspath('E:\Document\Database\FER\DISFA+\Labels')
+data_path = os.path.abspath('data path')
+landmark_path = os.path.abspath('landmark path')
+label_path = os.path.abspath('label path')
+save_path = os.path.abspath('path for saving data in tfrecords')
 lst = os.listdir(data_path)
 
 directories = []
@@ -235,38 +231,35 @@ def read_tfrecord(serialized_example):
 for subject in directories:
     subject = [subject]
 
-    # subject_process = DataPreprocess(data_list=subject,
-    #                                  landmarks_path=landmark_path,
-    #                                  dataset_path=data_path,
-    #                                  labels_path=label_path,
-    #                                  shuffle=True)
-    # subject_process.data = subject_process.get_sub_dirs(subject_list=subject_process.data_list)
+    subject_process = DataPreprocess(data_list=subject,
+                                     landmarks_path=landmark_path,
+                                     dataset_path=data_path,
+                                     labels_path=label_path,
+                                     shuffle=True)
+    subject_process.data = subject_process.get_sub_dirs(subject_list=subject_process.data_list)
 
-    # class_weights = calculate_class_unbalancing(subject_process.data)
+    class_weights = calculate_class_unbalancing(subject_process.data)
 
-    # with open(os.path.join(data_path, subject[0] + ".pkl"), "wb") as a_file:
-    #     pickle.dump(class_weights, a_file)
+    with open(os.path.join(save_path, subject[0], subject[0] + ".pkl"), "wb") as a_file:
+        pickle.dump(class_weights, a_file)
 
-    with open("E:\\gik\\" + subject[0] + ".pkl", "rb") as a_file:
-        output = pickle.load(a_file)
-    #     print(output)
+    random.shuffle(subject_process.data)
+    subject_process.data = prepare_data(subject_process.data)
+    ds = tf.data.Dataset.from_tensor_slices(subject_process.data)
+    ds = ds.map(map_func=image_reshape, num_parallel_calls=auto).prefetch(auto)
 
-    # random.shuffle(subject_process.data)
-    # subject_process.data = prepare_data(subject_process.data)
-    # ds = tf.data.Dataset.from_tensor_slices(subject_process.data)
-    # ds = ds.map(map_func=image_reshape, num_parallel_calls=auto).prefetch(auto)
-
+    # testing tf.dataset
     # for i, j in ds:
     #     print(i.shape)
     #     print(j)
 
-    # file_path = os.path.join(model_path, subject[0] + '.tfrecords')
-    # with tf.io.TFRecordWriter(file_path) as writer:
-    #     for image, labels in ds:
-    #         serialized_example = serialize_example(tf.io.serialize_tensor(image),
-    #                                                labels)
-    #         writer.write(serialized_example)
-    #
+    file_path = os.path.join(save_path, subject[0], subject[0] + '.tfrecords')
+    with tf.io.TFRecordWriter(file_path) as writer:
+        for image, labels in ds:
+            serialized_example = serialize_example(tf.io.serialize_tensor(image),
+                                                   labels)
+            writer.write(serialized_example)
+
     print(subject[0], 'done')
 
 print('finish')

@@ -1,10 +1,11 @@
+import pickle
 import tensorflow as tf
 import numpy as np
 import efficientnet.tfkeras as e
 import os
+from collections import Counter
+import collections, functools, operator
 import random
-import pandas as pd
-import scipy.io
 import cv2
 from skimage.util import random_noise
 from sklearn.model_selection import KFold
@@ -12,32 +13,37 @@ from tensorflow import keras as k
 from lib import f1_macro, f1_macro_loss
 
 
-def calculate_class_unbalancing(data):
+def calculate_class_weights(data):
     class_weights = dict()
     keys = ['AU1', 'AU2', 'AU4', 'AU5', 'AU6', 'AU9', 'AU12', 'AU15', 'AU17', 'AU20', 'AU25', 'AU26']
-    # create dict for each AU:
-    for key in keys:
-        vars()[key] = np.zeros((6,))
-    # counting class sample for each AU
-    for image_dir, label in data:
-        for key in keys:
-            vars()[key] += label[key]
 
+    first = True
+    for dic in data:
+        if first:
+            class_weights = dic.copy()
+            first = False
+            continue
+        else:
+            for key in class_weights:
+                class_weights[key] = dict(functools.reduce(operator.add, map(collections.Counter,
+                                                                             [dic[key], class_weights[key]])))
+    num_samples = sum(class_weights['AU1'].values())
     for key in keys:
-        maximum = np.max(vars()[key])
-        for i, j in enumerate(vars()[key]):
-            if j != 0:
-                vars()[key][i] = maximum / j
+        dic = class_weights[key].copy()
+        maximum = max(dic.values())
+        for j in dic:
+            if dic[j] != 0:
+                class_weights[key][j] = maximum / dic[j]
             else:
-                vars()[key][i] = 1
+                class_weights[key][j] = 1
 
-    for key in keys:
-        au = {}
-        for i, j in enumerate(vars()[key]):
-            au[i] = j
-        class_weights[key] = au
+    # for key in keys:
+    #     au = {}
+    #     for i, j in enumerate(vars()[key]):
+    #         au[i] = j
+    #     class_weights[key] = au
 
-    return class_weights
+    return class_weights, num_samples
 
 
 def augment(image_1):
@@ -62,24 +68,23 @@ def augment(image_1):
     return image_2
 
 
-def image_augmenting(image, label):
+def image_augmenting_train(image, label):
     # image = tf.image.convert_image_dtype(image, tf.float32)
     image = tf.image.random_hue(image, 0.05)
     image = tf.image.random_flip_left_right(image)
     image = tf.image.resize(image, [224, 224])
-    image = tf.py_function(func=augment, inp=[image], Tout=tf.float32)
+    # image = tf.py_function(func=augment, inp=[image], Tout=tf.float32)
     image = tf.reshape(image, [224, 224, 3])
     return image, label
 
 
-# def process_path_train(img, label):
-#     img = image_augmenting(img)
-#     return img, label
-
-
-# def process_path_valid(img, label):
-#     img = tf.reshape(img, [224, 224, 3])
-#     return img, label
+def image_augmenting_valid(image, label):
+    # image = tf.image.random_hue(image, 0.05)
+    # image = tf.image.random_flip_left_right(image)
+    # image = tf.image.resize(image, [224, 224])
+    # image = tf.py_function(func=augment, inp=[image], Tout=tf.float32)
+    image = tf.reshape(image, [224, 224, 3])
+    return image, label
 
 
 def read_tfrecord(serialized_example):
@@ -117,26 +122,23 @@ def read_tfrecord(serialized_example):
                    tf.reshape(tf.io.parse_tensor(example['AU26'], out_type=tf.float32), [6])),
 
 
-model_name = 'adam_1'
-save_path = os.path.abspath('D:\mehdi\models\AffectNet')
+model_name = 'model_name'
+save_path = os.path.abspath('save_path')
 model_path = os.path.join(save_path, f"{model_name}")
 
-# if not os.path.exists(model_path):
-#     os.makedirs(model_path)
+if not os.path.exists(model_path):
+    os.makedirs(model_path)
 
 auto = tf.data.experimental.AUTOTUNE
 batch = 32
 
-tfrecord_data_path = os.path.abspath('E:\Document\Database\FER\DISFA+\Images')
-landmark_path = os.path.abspath('E:\Document\Database\FER\DISFA+\FaceLandmarks\landmarks')
-label_path = os.path.abspath('E:\Document\Database\FER\DISFA+\Labels')
+tfrecord_data_path = os.path.abspath('tfrecords_data_path')
 lst = os.listdir(tfrecord_data_path)
 
 directories = []
 for i in lst:
     if os.path.isdir(os.path.join(tfrecord_data_path, i)):
         directories.append(i)
-
 
 kf = KFold(n_splits=9, shuffle=False)
 kf.get_n_splits(directories)
@@ -149,25 +151,48 @@ for train_index, valid_index in kf.split(directories):
     train_subject = list(np.asarray(directories)[train_index])
     valid_subject = list(np.asarray(directories)[valid_index])
 
-    train_subject_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject + '.tfrecords')) for subject in train_subject]
-    valid_subject_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject + '.tfrecords')) for subject in valid_subject]
+    train_subject_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject, subject + '.tfrecords')) for subject
+                          in train_subject]
+    valid_subject_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject, subject + '.tfrecords')) for subject
+                          in valid_subject]
 
-    train_ds = tf.data.TFRecordDataset(os.path.abspath('E:\\gik\\subject\\SN001.tfrecords'))
-    train_ds = train_ds.map(read_tfrecord).map(image_augmenting).batch(batch)
+    train_ds = tf.data.TFRecordDataset(train_subject_path)
+    train_ds = train_ds.map(read_tfrecord).map(image_augmenting_train).batch(batch).prefetch(auto).repeat()
+    # train_ds = train_ds.map(read_tfrecord).batch(batch).prefetch(auto)
 
     valid_ds = tf.data.TFRecordDataset(valid_subject_path)
-    valid_ds = valid_ds.map(read_tfrecord).batch(batch)
+    valid_ds = valid_ds.map(read_tfrecord).map(image_augmenting_valid).batch(batch).prefetch(auto).repeat()
 
-    for i in train_ds.take(1):
-        print(i[0].shape)
+    # testing tfrecord data
+    # for i in train_ds.take(1):
+    #     print(i[0].shape)
     #     im = (i[0].numpy()*255).astype(np.uint8)
     #     cv2.imshow('', im)
     #     cv2.waitKey(0)
 
-    fer_model_path = '../demo/model/AffectNet/checkpoint.h5'
+    train_class_num_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject, subject + '.pkl')) for subject in
+                            train_subject]
+    valid_class_num_path = [os.path.abspath(os.path.join(tfrecord_data_path, subject, subject + '.pkl')) for subject in
+                            valid_subject]
+
+    train_class = []
+    for path in train_class_num_path:
+        with open(path, "rb") as a_file:
+            train_class.append(pickle.load(a_file))
+
+    class_weights, num_samples_train = calculate_class_weights(train_class)
+
+    valid_class = []
+    for path in valid_class_num_path:
+        with open(path, "rb") as a_file:
+            valid_class.append(pickle.load(a_file))
+
+    _, num_samples_valid = calculate_class_weights(valid_class)
+
+    fer_model_path = 'pretrain model path'
     model = k.models.load_model(fer_model_path, compile=False)
     # layer_name = 'global_average_pooling2d'
-    layer_name = 'efficientnet-b0'
+    layer_name = 'efficientnet-b0'  # last conv layer
     conv_model = k.models.Model(inputs=model.get_layer(layer_name).input,
                                 outputs=model.get_layer(layer_name).output)
     # conv_model.summary()
@@ -176,6 +201,7 @@ for train_index, valid_index in kf.split(directories):
     x1 = tf.keras.layers.Input(shape=(224, 224, 3))
     x2 = conv_model(x1)
     x3 = tf.keras.layers.GlobalAveragePooling2D()(x2)
+    x3 = tf.keras.layers.Dropout(0.4)(x3)
     # x3 = tf.keras.layers.Dense(128, activation='selu')(x2)
     out_1 = tf.keras.layers.Dense(6, activation='softmax', name='AU1')(x3)
     out_2 = tf.keras.layers.Dense(6, activation='softmax', name='AU2')(x3)
@@ -193,7 +219,7 @@ for train_index, valid_index in kf.split(directories):
     outs = [out_1, out_2, out_3, out_4, out_5, out_6, out_7, out_8, out_9, out_10, out_11, out_12]
 
     au_model = tf.keras.models.Model(x1, outs)
-    au_model.summary()
+    # au_model.summary()
 
     losses = {'AU1': 'categorical_crossentropy',
               'AU2': 'categorical_crossentropy',
@@ -208,6 +234,7 @@ for train_index, valid_index in kf.split(directories):
               'AU25': 'categorical_crossentropy',
               'AU26': 'categorical_crossentropy'}
 
+    # create custom loss
     # loss1 = partial(f1_macro_loss)
     # loss2 = partial(f1_macro_loss)
     # loss4 = partial(f1_macro_loss)
@@ -278,24 +305,38 @@ for train_index, valid_index in kf.split(directories):
                      loss_weights=loss_weight,
                      loss=losses)
 
-    del model, conv_model
-
-    checkpoint_path = os.path.join(model_path, 'checkpoint.h5')
+    checkpoint_path = os.path.join(model_path, f'best_val_loss_fold_{fold}.h5')
     checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
                                                     monitor='val_loss', verbose=0,
                                                     save_best_only=True, save_weights_only=False,
-                                                    mode='min', save_freq=1)
+                                                    mode='min', save_freq='epoch')
 
-    csv_callback = tf.keras.callbacks.CSVLogger(os.path.join(model_path, "training_log.csv"),
-                                                append=True)
+    csv_callback = tf.keras.callbacks.CSVLogger(os.path.join(model_path, f"training_log{fold}.csv"),
+                                                append=False)
     callbacks_list = [checkpoint, csv_callback]
 
-    au_model.fit(train_ds,
-                 epochs=5,
-                 validation_data=valid_ds)
-                 # class_weight=class_weights,
-                 # callbacks=callbacks_list)
+    history = au_model.fit(train_ds,
+                           epochs=16,
+                           verbose=0,
+                           steps_per_epoch=np.ceil(num_samples_train / batch),
+                           use_multiprocessing=True,
+                           validation_data=valid_ds,
+                           validation_steps=np.ceil(num_samples_valid / batch),
+                           callbacks=callbacks_list,
+                           class_weight=class_weights)
+
+    val_loss.append(min(history.history['val_loss']))
+    print(f'validation acc in iteration {fold}:', min(history.history['val_loss']))
 
     print(f'end of fold {fold}')
+    del au_model
+
+print(f'{fold}-fold validation loss:', np.mean(val_loss))
+
+# saving kfold results in txt file
+with open('result.txt', 'a') as file:
+    file.write('description, k-fold (mean val loss)')
+    file.write('\n')
+    file.write(f'{model_name}, {np.mean(val_loss)}')
 
 print('finish')
