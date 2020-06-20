@@ -6,16 +6,16 @@ import efficientnet.tfkeras as e
 from utils import prepare_image
 
 
-model_dir = '../demo/model/AffectNet/checkpoint.h5'
+model_dir = 'fer_model_path'
 fer_model = k.models.load_model(model_dir, compile=False)
-fer_model.compile(loss='mse',
-                  optimizer='adam')
+# fer_model.compile(loss='mse',
+#                   optimizer='adam')
 layer_name = 'global_average_pooling2d'
 intermediate_layer_model = k.models.Model(inputs=fer_model.input,
                                           outputs=fer_model.get_layer(layer_name).output)
 intermediate_layer_model.summary()
 
-root = os.path.abspath('E:\Document\Database\FER\CK+')
+root = os.path.abspath('dataset_path')
 dataset_dir = os.path.join(root, 'cohn-kanade-images')
 label_dir = os.path.join(root, 'Emotion')
 landmark_dir = os.path.join(root, 'Landmarks')
@@ -100,5 +100,4 @@ for subject in subject_list:
         np.savez(path, features, np.atleast_1d(label), np.asarray(landmarks, dtype=np.float16))
 
 
-# print(c)
 print('finish')

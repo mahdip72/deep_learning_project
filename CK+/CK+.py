@@ -79,10 +79,10 @@ for train_index, valid_index in kf.split(subject_list):
 
     history = model.fit(train_ds,
                         epochs=15,
-                        # steps_per_epoch=int(len(train_path)),
+                        steps_per_epoch=int(len(train_path)),
                         validation_data=valid_ds,
                         # class_weight=class_loss_weights,
-                        # validation_steps=int(len(valid_path)),
+                        validation_steps=int(len(valid_path)),
                         verbose=0)
 
     best_acc.append(max(history.history['val_acc']))
