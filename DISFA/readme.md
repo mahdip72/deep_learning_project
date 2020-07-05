@@ -4,4 +4,4 @@ next loaded a pre trained FER model and removed top head (dnn) from it. after th
 
 details of AUs based on DISFA+ paper.
 
-[][DISFA\aus.PNG]
+![](DISFA\aus.PNG)
