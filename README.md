@@ -5,9 +5,11 @@ all project has been written with tensorflow (keras) framework in python.
 more project and their details will be added soon ...
 
 ekman emotion model:
+
 ![](https://learn-to-read-emotions.com/wp-content/uploads/2019/04/7-Basic-Emotions-Paul-Ekman.jpg)
 
-circumplex emotion model:
+and circumplex emotion model:
+
 ![](https://www.researchgate.net/profile/Zhe_Liu13/publication/324664655/figure/fig1/AS:617659670470656@1524272949294/Core-emotions-established-in-the-circumplex-model.png)
 
 here is some sample from affect detection in both categorical and dimensional, also, 12 AUs in faces were detected:
