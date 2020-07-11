@@ -6,7 +6,7 @@ more project and their details will be added soon ...
 
 here is some sample from affect detection in both categorical and dimensional, also, 12 AUs in faces were detected:
 
-![](AffectNet/sample_7-emotion_1.gif)
+![](./AffectNet/sample_7-emotion_1.gif)
 
 ![](sample_5-dim-au.gif)
 
