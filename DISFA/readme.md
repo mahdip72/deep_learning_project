@@ -5,3 +5,7 @@ next loaded a pre trained FER model and removed top head (dnn) from it. after th
 details of AUs based on DISFA+ paper.
 
 ![](aus.PNG)
+
+here are some example (AUs level showed in ascending order from left to right)
+
+![](aus.PNG)
