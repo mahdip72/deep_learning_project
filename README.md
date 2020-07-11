@@ -12,7 +12,7 @@ and circumplex emotion model:
 
 ![](https://www.researchgate.net/profile/Zhe_Liu13/publication/324664655/figure/fig1/AS:617659670470656@1524272949294/Core-emotions-established-in-the-circumplex-model.png)
 
-here is some sample from affect detection in both categorical and dimensional, also, 12 AUs in faces were detected:
+here you can see some samples from affect detection in both categorical and dimensional, also, 12 AUs in faces were detected:
 
 ![](https://github.com/mahdip72/deep_learning_project/blob/master/AffectNet/sample_6-emotion_3.gif)
 
