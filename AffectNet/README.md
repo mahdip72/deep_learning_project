@@ -8,7 +8,7 @@ here is some sample from affect detection in both categorical and dimensional:
 
 ![](sample_3.gif)
 
-![](sample-4_dim.gif)
+![](sample-4_emotion.gif)
 
 ![](sample-2_output_dim.gif)
 
