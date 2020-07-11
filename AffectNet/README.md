@@ -12,6 +12,8 @@ here is some sample from affect detection in both categorical and dimensional:
 
 ![](sample_6-emotion.gif)
 
+![](sample_7-dim.gif)
+
 ![](sample_3.gif)
 
 ![](sample_4-emotion.gif)
