@@ -1,8 +1,8 @@
 # Deep Facial Affect Recognition
 
 this repository was built for deep learning projects that were implemented for facial affect recognition.
-all project has been written with tensorflow (keras) framework in python.
-more project and their details will be added soon ...
+all project has been written with tensorflow (keras) framework in python. lots of work has been done in this project which i didn't put here.
+more work and their details will be added soon ...
 
 ekman emotion model:
 
