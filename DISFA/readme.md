@@ -8,4 +8,4 @@ details of AUs based on DISFA+ paper.
 
 here are some example (AUs level showed in ascending order from left to right)
 
-![](aus.PNG)
+![](sample_5-au.gif)
