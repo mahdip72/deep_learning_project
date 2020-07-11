@@ -10,10 +10,10 @@ here is some sample from affect detection in both categorical and dimensional, a
 
 ![](sample_5-dim-au.gif)
 
+![](sample-2_output_dim.gif)
+
 ![](sample-1_emotion_au.gif)
 
 ![](sample-1_output_dim_au.gif)
-
-![](sample-2_output_dim.gif)
 
 ![](sample-2_output_dim_au.gif)
