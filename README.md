@@ -5,7 +5,7 @@ all project has been written with tensorflow (keras) framework in python.
 more project and their details will be added soon ...
 
 ekman emotion model:
-![](https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcRUwb5tv8V7AzWi-CGgO5nbTTevKphdPlHtSQ&usqp=CAU)
+![](https://learn-to-read-emotions.com/wp-content/uploads/2019/04/7-Basic-Emotions-Paul-Ekman.jpg)
 
 circumplex emotion model:
 ![](https://www.researchgate.net/profile/Zhe_Liu13/publication/324664655/figure/fig1/AS:617659670470656@1524272949294/Core-emotions-established-in-the-circumplex-model.png)
