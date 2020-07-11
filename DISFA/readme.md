@@ -6,7 +6,8 @@ details of AUs based on DISFA+ paper.
 
 ![](aus.PNG)
 
-here are some example (AUs level showed in ascending order from left to right)
+here you can see some samples (AUs level showed in ascending order from left to right):
+
 
 ![](sample_6-au.gif)
 
